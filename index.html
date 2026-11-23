@@ -1,0 +1,2286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="theme-color" content="#16302B">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="application-name" content="SwasthyaThali">
+    <title>SwasthyaThali | Pixel Diabetic Meal Planner & Prep</title>
+    <link id="pwa-manifest-link" rel="manifest" href="">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        cream: '#F7F8F5',
+                        forest: '#16302B',
+                        terracotta: '#E07A5F',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F7F8F5;
+            color: #1E293B;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 84px; /* Space for mobile bottom navigation */
+        }
+        @media (min-width: 768px) {
+            body {
+                padding-bottom: 24px;
+            }
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F5F9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 9999px;
+        }
+        .fade-in {
+            animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Top Forest Header (Android Material Inspired) -->
+    <header class="bg-[#16302B] text-white sticky top-0 z-30 shadow-md">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
+            <!-- Brand & User Status -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-[#E07A5F] text-white flex items-center justify-center shadow-sm shrink-0">
+                    <i data-lucide="utensils" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-display font-bold text-lg sm:text-xl tracking-tight leading-tight">SwasthyaThali</h1>
+                        <span id="syncStatusBadge" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-900/90 text-emerald-200 border border-emerald-700/70">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            <span id="syncStatusText">Synced</span>
+                        </span>
+                    </div>
+                    <p class="text-xs text-emerald-100/80 font-medium" id="headerSubtitle">1,900 kcal • 12:00 PM – 7:00 PM • 4 Cuisines</p>
+                </div>
+            </div>
+
+            <!-- Right Actions: Install App + Desktop Nav -->
+            <div class="flex items-center gap-2">
+                <button onclick="openInstallModal()" id="installAppBtn" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 text-xs font-bold transition-colors">
+                    <i data-lucide="smartphone" class="w-4 h-4 text-[#E07A5F]"></i>
+                    <span class="hidden sm:inline">Install on Pixel</span>
+                    <span class="sm:hidden">Install</span>
+                </button>
+
+                <!-- Desktop Navigation Tabs -->
+                <nav class="hidden md:flex items-center bg-black/25 p-1 rounded-xl border border-white/10">
+                    <button onclick="switchTab('planner')" id="dtab-planner" class="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all bg-white text-[#16302B] shadow-sm">
+                        <i data-lucide="calendar-days" class="w-4 h-4"></i>
+                        <span>Today's Plan</span>
+                    </button>
+                    <button onclick="switchTab('prep')" id="dtab-prep" class="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all text-emerald-100 hover:text-white">
+                        <i data-lucide="shopping-basket" class="w-4 h-4"></i>
+                        <span>Bazaar & Prep</span>
+                    </button>
+                    <button onclick="switchTab('preferences')" id="dtab-preferences" class="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all text-emerald-100 hover:text-white">
+                        <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                        <span>Preferences</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Android Pixel Install Banner (Dismissible) -->
+    <div id="pixelInstallBanner" class="bg-emerald-900 text-emerald-50 border-b border-emerald-800 px-4 py-2.5 text-xs sm:text-sm">
+        <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+                <i data-lucide="download-cloud" class="w-4 h-4 text-[#E07A5F] shrink-0"></i>
+                <span><strong>Pixel / Android Tip:</strong> Add SwasthyaThali to your Home Screen for full-screen offline access anytime.</span>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick="triggerNativeOrGuideInstall()" class="px-3 py-1 rounded-lg bg-[#E07A5F] hover:bg-[#d1694d] text-white font-bold text-xs transition-colors">
+                    Add App
+                </button>
+                <button onclick="dismissInstallBanner()" class="p-1 text-emerald-300 hover:text-white" aria-label="Dismiss">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Banner -->
+    <div id="toastBanner" class="fixed bottom-24 md:bottom-6 right-4 left-4 sm:left-auto sm:right-6 z-50 hidden max-w-sm bg-[#16302B] text-white px-4 py-3 rounded-2xl shadow-xl border border-emerald-800 flex items-center gap-3 fade-in">
+        <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400 shrink-0"></i>
+        <span id="toastText" class="text-sm font-medium">Saved!</span>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-5">
+
+        <!-- ==================== VIEW 1: MEAL PLANNER ==================== -->
+        <section id="view-planner" class="space-y-5 fade-in">
+
+            <!-- Day Selector & Quick Actions Bar -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs space-y-3.5">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Daily Schedule</span>
+                        <div class="flex flex-wrap items-center gap-2 mt-0.5">
+                            <h2 id="activeDayTitle" class="font-display font-extrabold text-2xl text-slate-900">Monday</h2>
+                            <span id="activeDayBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200">
+                                Veg & Non-Veg Allowed
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="openAiGeneratorModal()" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-xs sm:text-sm font-bold transition-colors">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-indigo-600"></i>
+                            <span>AI Recipe</span>
+                        </button>
+                        <button onclick="shuffleDayMeals()" class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-bold transition-colors">
+                            <i data-lucide="shuffle" class="w-4 h-4"></i>
+                            <span>Shuffle Day</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 7-Day Horizontal Selector Pills -->
+                <div id="daySelectorGrid" class="grid grid-cols-7 gap-1.5 sm:gap-2">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <!-- Daily Macro & Fasting Window Summary Bar -->
+            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs">
+                <div class="flex flex-wrap items-center justify-between gap-3 pb-3.5 mb-3.5 border-b border-slate-100">
+                    <div class="flex items-center gap-2.5">
+                        <div class="p-2 rounded-xl bg-amber-50 text-amber-700 border border-amber-200/70">
+                            <i data-lucide="clock" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <span class="text-[11px] text-slate-500 font-semibold uppercase tracking-wider block">Eating Window</span>
+                            <span id="displayEatingWindow" class="text-sm font-bold text-slate-900">12:00 PM – 7:00 PM (17:7 Fast)</span>
+                        </div>
+                    </div>
+
+                    <!-- Optional Snack Toggle -->
+                    <label class="inline-flex items-center gap-2.5 cursor-pointer bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors">
+                        <span class="text-xs sm:text-sm font-bold text-slate-700">4:00 PM Light Snack</span>
+                        <input type="checkbox" id="daySnackToggle" onchange="toggleDaySnack()" class="w-5 h-5 accent-[#16302B] rounded cursor-pointer">
+                    </label>
+                </div>
+
+                <!-- 4 Macro Progress Cards (Includes Meals + Snack + Tea & Coffee) -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                        <div class="flex justify-between items-baseline mb-1">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Calories</span>
+                            <span id="macroCalTarget" class="text-[11px] font-semibold text-slate-500">/ 1,900</span>
+                        </div>
+                        <div class="text-lg sm:text-2xl font-display font-extrabold text-slate-900" id="macroCalVal">0 kcal</div>
+                        <div class="w-full h-2 bg-slate-200 rounded-full mt-2 overflow-hidden">
+                            <div id="macroCalBar" class="h-full bg-[#16302B] rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/70">
+                        <div class="flex justify-between items-baseline mb-1">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-800">Protein</span>
+                            <span class="text-[11px] font-semibold text-emerald-700">Goal: 120g+</span>
+                        </div>
+                        <div class="text-lg sm:text-2xl font-display font-extrabold text-emerald-900" id="macroProVal">0g</div>
+                        <div class="w-full h-2 bg-emerald-200/70 rounded-full mt-2 overflow-hidden">
+                            <div id="macroProBar" class="h-full bg-emerald-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-amber-50/70 border border-amber-200/70">
+                        <div class="flex justify-between items-baseline mb-1">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-amber-800">Fiber</span>
+                            <span class="text-[11px] font-semibold text-amber-700">Goal: 30g+</span>
+                        </div>
+                        <div class="text-lg sm:text-2xl font-display font-extrabold text-amber-900" id="macroFibVal">0g</div>
+                        <div class="w-full h-2 bg-amber-200/70 rounded-full mt-2 overflow-hidden">
+                            <div id="macroFibBar" class="h-full bg-amber-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-sky-50/70 border border-sky-200/70">
+                        <div class="flex justify-between items-baseline mb-1">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-sky-800">Total Carbs</span>
+                            <span class="text-[11px] font-semibold text-sky-700">Incl. Milk Tea</span>
+                        </div>
+                        <div class="text-lg sm:text-2xl font-display font-extrabold text-sky-900" id="macroCarbVal">0g</div>
+                        <div class="w-full h-2 bg-sky-200/70 rounded-full mt-2 overflow-hidden">
+                            <div id="macroCarbBar" class="h-full bg-sky-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DEDICATED DAILY TEA & COFFEE TRACKER CARD -->
+            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200/90 shadow-xs space-y-3.5">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                            <i data-lucide="coffee" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-display font-bold text-base sm:text-lg text-slate-900">Daily Tea & Coffee Log</h3>
+                            <p class="text-xs text-slate-500">Tap <strong class="text-slate-700">+</strong> as you drink. Unsweetened black/green beverages are fasting-safe; milk tea/coffee adds to daily macros.</p>
+                        </div>
+                    </div>
+                    <div id="bevDaySummaryBadge" class="px-3 py-1 rounded-xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900">
+                        0 cups • 0 kcal • 0g carbs
+                    </div>
+                </div>
+
+                <!-- Interactive Beverage Steppers Grid -->
+                <div id="beverageCountersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <!-- Meal Slots Stack (Meal 1, Optional Snack, Meal 2) -->
+            <div id="mealSlotsContainer" class="space-y-4">
+                <!-- Populated via JS -->
+            </div>
+
+            <!-- Diabetic Safety & Coaching Reminder Footer -->
+            <div class="bg-[#16302B] text-emerald-50 p-4 sm:p-5 rounded-2xl flex items-start gap-3 shadow-xs">
+                <i data-lucide="heart-pulse" class="w-6 h-6 text-[#E07A5F] shrink-0 mt-0.5"></i>
+                <div class="text-xs sm:text-sm leading-relaxed">
+                    <strong class="text-white block mb-0.5">Diabetic Sequencing & Tea/Coffee Rule:</strong>
+                    Keep milk tea/coffee strictly inside your eating window and always sugar-free (use a pinch of cardamom or cinnamon for natural sweetness). At meals, eat vegetables and protein first before roti or brown rice, followed by a 15-minute walk.
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== VIEW 2: BAZAAR & PREP CHECKLIST ==================== -->
+        <section id="view-prep" class="hidden space-y-5 fade-in">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h2 class="font-display font-bold text-xl sm:text-2xl text-slate-900">Weekly Bazaar & Sunday Prep List</h2>
+                    <p class="text-xs sm:text-sm text-slate-600 mt-1">Compiled automatically from your 7-day Continental, Bengali, Indian & Chinese plan.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="copyGroceryList()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-bold transition-colors">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                        <span>Copy List</span>
+                    </button>
+                    <button onclick="resetGroceryChecks()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs sm:text-sm font-bold transition-colors">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                        <span>Reset</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Weekend Quick Prep Guide -->
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5">
+                <h3 class="font-display font-bold text-base sm:text-lg text-amber-950 flex items-center gap-2 mb-3">
+                    <i data-lucide="flame" class="w-5 h-5 text-[#E07A5F]"></i>
+                    <span>30-Minute Sunday Batch Prep (Zero Elaborate Cooking)</span>
+                </h3>
+                <div class="grid sm:grid-cols-3 gap-3 text-xs sm:text-sm text-amber-900">
+                    <div class="bg-white/90 p-3.5 rounded-xl border border-amber-200/70">
+                        <strong class="block text-amber-950 mb-1">1. Fish & Chicken Boxes</strong>
+                        Marinate Rui/Bhetki fillets and chicken breast with turmeric, salt, pepper, and lemon; freeze in 220g meal packs.
+                    </div>
+                    <div class="bg-white/90 p-3.5 rounded-xl border border-amber-200/70">
+                        <strong class="block text-amber-950 mb-1">2. Boiled Dal & Chhola</strong>
+                        Pressure-cook yellow moong dal and black chhola so weekday tadka, chilla, or jhalmuri takes under 10 minutes.
+                    </div>
+                    <div class="bg-white/90 p-3.5 rounded-xl border border-amber-200/70">
+                        <strong class="block text-amber-950 mb-1">3. Pre-Cut Veg & Herbs</strong>
+                        Store diced zucchini, bell peppers, broccoli, jhinge, and ginger-garlic paste in airtight containers.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categorized Grocery Grid -->
+            <div id="groceryCategoriesGrid" class="grid md:grid-cols-2 gap-4">
+                <!-- Populated via JS -->
+            </div>
+        </section>
+
+        <!-- ==================== VIEW 3: PREFERENCES & PROFILE MEMORY ==================== -->
+        <section id="view-preferences" class="hidden space-y-5 fade-in">
+            <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
+                <div class="border-b border-slate-100 pb-4 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="font-display font-bold text-xl sm:text-2xl text-slate-900">Dietary Preferences & Device Memory</h2>
+                        <p class="text-xs sm:text-sm text-slate-600 mt-1">Automatically saved on your Pixel phone & cloud backup so your rules are always remembered.</p>
+                    </div>
+                    <span id="cloudUserIdBadge" class="text-[11px] font-mono bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg border border-slate-200">
+                        Local + Cloud Sync Active
+                    </span>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Column 1: Targets, Window & Default Daily Tea/Coffee -->
+                    <div class="space-y-4">
+                        <h3 class="font-display font-bold text-sm text-slate-800 uppercase tracking-wider">1. Targets & Fasting Window</h3>
+
+                        <div>
+                            <label class="block text-xs sm:text-sm font-bold text-slate-700 mb-1">Daily Calorie Target (kcal)</label>
+                            <input type="number" id="prefCalories" min="1400" max="2800" step="50" value="1900" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-[#16302B]">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs sm:text-sm font-bold text-slate-700 mb-1">Eating Window (2 Meals + Optional Snack)</label>
+                            <select id="prefWindow" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#16302B] bg-white">
+                                <option value="12:00 PM – 7:00 PM (17:7 Fast)">12:00 PM – 7:00 PM (17:7 Fast)</option>
+                                <option value="12:00 PM – 8:00 PM (16:8 Fast)">12:00 PM – 8:00 PM (16:8 Fast)</option>
+                                <option value="11:00 AM – 7:00 PM (16:8 Fast)">11:00 AM – 7:00 PM (16:8 Fast)</option>
+                                <option value="1:00 PM – 8:00 PM (17:7 Fast)">1:00 PM – 8:00 PM (17:7 Fast)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs sm:text-sm font-bold text-slate-700 mb-1">Default Daily Tea & Coffee Routine</label>
+                            <p class="text-xs text-slate-500 mb-2">Pre-fills each new day automatically (you can still adjust cups anytime on the home screen).</p>
+                            <div id="defaultBevPrefsGrid" class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <!-- Populated via JS -->
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs sm:text-sm font-bold text-slate-700 mb-1">Diabetic Exclusions</label>
+                            <input type="text" id="prefExclusions" value="White sugar, potatoes, deep-fried snacks, refined maida, protein powders" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#16302B]">
+                        </div>
+                    </div>
+
+                    <!-- Column 2: 4 Cuisines & Pure-Veg Days -->
+                    <div class="space-y-5">
+                        <div>
+                            <h3 class="font-display font-bold text-sm text-slate-800 uppercase tracking-wider mb-2.5">2. Preferred Cuisines (4 Menus)</h3>
+                            <div class="space-y-2.5">
+                                <label class="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-slate-100">
+                                    <div>
+                                        <span class="font-bold text-slate-900 block text-sm">Continental (Quick European / Mediterranean)</span>
+                                        <span class="text-xs text-slate-500">Herb grilled chicken/fish, olive oil veggies, veggie omelette, garlic prawns</span>
+                                    </div>
+                                    <input type="checkbox" id="prefCuisineContinental" checked class="w-5 h-5 accent-[#16302B] rounded">
+                                </label>
+
+                                <label class="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-slate-100">
+                                    <div>
+                                        <span class="font-bold text-slate-900 block text-sm">Bengali Home-Style</span>
+                                        <span class="text-xs text-slate-500">Rui/Katla jhol, Shorshe fish, Doi murgi, Shukto, Chhanar dalna, Mocha</span>
+                                    </div>
+                                    <input type="checkbox" id="prefCuisineBengali" checked class="w-5 h-5 accent-[#16302B] rounded">
+                                </label>
+
+                                <label class="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-slate-100">
+                                    <div>
+                                        <span class="font-bold text-slate-900 block text-sm">North & South Indian</span>
+                                        <span class="text-xs text-slate-500">Tandoori/Methi chicken, Paneer bhurji, Besan chilla, Rajma, Egg bhurji</span>
+                                    </div>
+                                    <input type="checkbox" id="prefCuisineIndian" checked class="w-5 h-5 accent-[#16302B] rounded">
+                                </label>
+
+                                <label class="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:bg-slate-100">
+                                    <div>
+                                        <span class="font-bold text-slate-900 block text-sm">Diabetic-Friendly Indo-Chinese</span>
+                                        <span class="text-xs text-slate-500">Pan-seared chilli chicken, Garlic prawns, Tofu & cauliflower fried rice</span>
+                                    </div>
+                                    <input type="checkbox" id="prefCuisineChinese" checked class="w-5 h-5 accent-[#16302B] rounded">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="font-display font-bold text-sm text-slate-800 uppercase tracking-wider mb-1.5">3. Pure-Vegetarian (Niramish) Days</h3>
+                            <p class="text-xs text-slate-500 mb-2.5">Selected days automatically enforce 100% pure-vegetarian meals.</p>
+                            <div id="vegDaysCheckboxes" class="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                                <!-- Populated via JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                    <button onclick="regenerateFullWeekPlan()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs sm:text-sm font-bold transition-colors">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        <span>Save & Regenerate Entire 7-Day Plan</span>
+                    </button>
+                    <button onclick="savePreferences(true)" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#16302B] hover:bg-emerald-950 text-white text-xs sm:text-sm font-bold shadow-sm transition-colors">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        <span>Save Preferences</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==================== MOBILE BOTTOM NAVIGATION BAR (ANDROID PIXEL OPTIMIZED) ==================== -->
+    <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-200 px-2 py-1.5 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+        <div class="grid grid-cols-3 gap-1 max-w-md mx-auto">
+            <button onclick="switchTab('planner')" id="mtab-planner" class="flex flex-col items-center justify-center py-1.5 rounded-xl bg-emerald-50 text-[#16302B] font-bold">
+                <i data-lucide="calendar-days" class="w-5 h-5 mb-0.5"></i>
+                <span class="text-[11px]">Today's Plan</span>
+            </button>
+            <button onclick="switchTab('prep')" id="mtab-prep" class="flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-500 hover:text-slate-900 font-semibold">
+                <i data-lucide="shopping-basket" class="w-5 h-5 mb-0.5"></i>
+                <span class="text-[11px]">Bazaar & Prep</span>
+            </button>
+            <button onclick="switchTab('preferences')" id="mtab-preferences" class="flex flex-col items-center justify-center py-1.5 rounded-xl text-slate-500 hover:text-slate-900 font-semibold">
+                <i data-lucide="sliders-horizontal" class="w-5 h-5 mb-0.5"></i>
+                <span class="text-[11px]">Preferences</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==================== MODAL: SWAP MEAL PICKER ==================== -->
+    <div id="swapModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden fade-in">
+            <div class="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+                <div>
+                    <h3 id="swapModalTitle" class="font-display font-bold text-lg text-slate-900">Choose Replacement Meal</h3>
+                    <p id="swapModalSubtitle" class="text-xs text-slate-500 mt-0.5">Filtered by your dietary preferences</p>
+                </div>
+                <button onclick="closeSwapModal()" class="p-2 rounded-xl text-slate-500 hover:bg-slate-200 hover:text-slate-900">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- 4-Cuisine Filter Pills inside Modal -->
+            <div class="px-4 py-2.5 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto bg-white shrink-0">
+                <button onclick="filterSwapList('ALL')" id="swapFilter-ALL" class="px-3 py-1.5 rounded-full text-xs font-bold bg-[#16302B] text-white shrink-0">All Matching</button>
+                <button onclick="filterSwapList('Continental')" id="swapFilter-Continental" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 shrink-0">Continental</button>
+                <button onclick="filterSwapList('Bengali')" id="swapFilter-Bengali" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 shrink-0">Bengali</button>
+                <button onclick="filterSwapList('Indian')" id="swapFilter-Indian" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 shrink-0">Indian</button>
+                <button onclick="filterSwapList('Chinese')" id="swapFilter-Chinese" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 shrink-0">Chinese</button>
+            </div>
+
+            <div id="swapModalList" class="p-4 overflow-y-auto space-y-3 flex-1">
+                <!-- Populated via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: AI FRESH MEAL GENERATOR ==================== -->
+    <div id="aiModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden fade-in">
+            <div class="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-indigo-50/80">
+                <div class="flex items-center gap-2.5">
+                    <div class="p-2 rounded-xl bg-indigo-600 text-white">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-display font-bold text-lg text-slate-900">Generate Quick Meal</h3>
+                        <p class="text-xs text-slate-600">Creates a simple 2-step diabetic-friendly recipe</p>
+                    </div>
+                </div>
+                <button onclick="closeAiGeneratorModal()" class="p-2 rounded-xl text-slate-500 hover:bg-slate-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-5 space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Cuisine Style</label>
+                        <select id="aiCuisineSelect" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold bg-white">
+                            <option value="Continental">Continental</option>
+                            <option value="Bengali">Bengali</option>
+                            <option value="Indian">Indian</option>
+                            <option value="Chinese">Indo-Chinese</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Meal Slot</label>
+                        <select id="aiSlotSelect" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold bg-white">
+                            <option value="meal1">Meal 1 (Lunch ~780 kcal)</option>
+                            <option value="meal2">Meal 2 (Dinner ~760 kcal)</option>
+                            <option value="snack">Light Snack (~220 kcal)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Ingredients on hand (Optional)</label>
+                    <input type="text" id="aiPromptInput" placeholder="e.g., Bhetki fish, mushrooms, chicken breast, paneer..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600">
+                </div>
+
+                <div id="aiVegNotice" class="hidden p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800">
+                    Today is a Pure-Vegetarian day, so the generated meal will be 100% Niramish (Pure-Veg).
+                </div>
+
+                <div id="aiErrorBox" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700"></div>
+
+                <button id="aiGenerateBtn" onclick="generateCustomAiMeal()" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-sm">
+                    <i data-lucide="wand-2" class="w-4 h-4"></i>
+                    <span>Create & Apply Meal to Today</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: ANDROID / GOOGLE PIXEL INSTALL GUIDE ==================== -->
+    <div id="installModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white rounded-t-3xl sm:rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden fade-in">
+            <div class="p-5 bg-[#16302B] text-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-xl bg-[#E07A5F] text-white">
+                        <i data-lucide="smartphone" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-display font-bold text-lg">Install on Google Pixel / Android</h3>
+                        <p class="text-xs text-emerald-100/80">Run full-screen & offline like a native app</p>
+                    </div>
+                </div>
+                <button onclick="closeInstallModal()" class="p-1.5 rounded-xl text-emerald-200 hover:bg-white/10">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-5 space-y-4 text-sm text-slate-700">
+                <div id="nativePromptContainer" class="hidden">
+                    <button onclick="triggerNativePrompt()" class="w-full py-3 rounded-xl bg-[#E07A5F] hover:bg-[#d1694d] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Install SwasthyaThali App Now</span>
+                    </button>
+                </div>
+
+                <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                    <p class="font-bold text-slate-900 text-xs uppercase tracking-wider">3 Quick Steps in Chrome on Pixel:</p>
+                    <div class="flex items-start gap-3">
+                        <span class="w-6 h-6 rounded-full bg-[#16302B] text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
+                        <p>Tap the <strong>three-dot menu (⋮)</strong> in the top-right corner of Chrome on your Pixel phone.</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="w-6 h-6 rounded-full bg-[#16302B] text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
+                        <p>Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong>.</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="w-6 h-6 rounded-full bg-[#16302B] text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</span>
+                        <p>Tap <strong>Install</strong>. SwasthyaThali will appear on your Pixel Home Screen and remember your meals, tea/coffee logs, and preferences offline and in the cloud.</p>
+                    </div>
+                </div>
+
+                <button onclick="closeInstallModal()" class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm">
+                    Got It
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== APPLICATION LOGIC + PWA + FIREBASE PERSISTENCE ==================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // -------------------- A. PWA MANIFEST & SERVICE WORKER SETUP --------------------
+        function setupPwaSupport() {
+            try {
+                const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#16302B"/><circle cx="256" cy="256" r="145" fill="none" stroke="#E07A5F" stroke-width="28"/><path d="M195 165v180M256 150v210M317 165v180" stroke="#FAF9F6" stroke-width="24" stroke-linecap="round"/></svg>`;
+                const iconUrl = 'data:image/svg+xml;base64,' + btoa(iconSvg);
+
+                const manifest = {
+                    name: 'SwasthyaThali - Diabetic Meal Planner',
+                    short_name: 'SwasthyaThali',
+                    description: 'Personal 2-Meal + Tea/Coffee Diabetic Meal Planner & Prep App',
+                    start_url: window.location.href,
+                    display: 'standalone',
+                    background_color: '#F7F8F5',
+                    theme_color: '#16302B',
+                    orientation: 'portrait-primary',
+                    icons: [
+                        { src: iconUrl, sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+                        { src: iconUrl, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+                    ]
+                };
+
+                const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+                const manifestUrl = URL.createObjectURL(manifestBlob);
+                const linkEl = document.getElementById('pwa-manifest-link');
+                if (linkEl) linkEl.setAttribute('href', manifestUrl);
+
+                if ('serviceWorker' in navigator) {
+                    const swCode = `
+                        const CACHE_NAME = 'swasthyathali-cache-v2';
+                        self.addEventListener('install', (e) => {
+                            self.skipWaiting();
+                        });
+                        self.addEventListener('activate', (e) => {
+                            e.waitUntil(self.clients.claim());
+                        });
+                        self.addEventListener('fetch', (e) => {
+                            if (e.request.method !== 'GET') return;
+                            e.respondWith(
+                                fetch(e.request)
+                                    .then((res) => {
+                                        const clone = res.clone();
+                                        caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone)).catch(() => {});
+                                        return res;
+                                    })
+                                    .catch(() => caches.match(e.request))
+                            );
+                        });
+                    `;
+                    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                    const swUrl = URL.createObjectURL(swBlob);
+                    navigator.serviceWorker.register(swUrl).catch(() => {});
+                }
+            } catch (e) {
+                console.warn('PWA setup note:', e);
+            }
+        }
+
+        let deferredInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            const nativeContainer = document.getElementById('nativePromptContainer');
+            if (nativeContainer) nativeContainer.classList.remove('hidden');
+        });
+
+        window.triggerNativePrompt = async function () {
+            if (deferredInstallPrompt) {
+                deferredInstallPrompt.prompt();
+                await deferredInstallPrompt.userChoice;
+                deferredInstallPrompt = null;
+                window.closeInstallModal();
+            }
+        };
+
+        window.triggerNativeOrGuideInstall = function () {
+            if (deferredInstallPrompt) {
+                window.triggerNativePrompt();
+            } else {
+                window.openInstallModal();
+            }
+        };
+
+        window.openInstallModal = function () {
+            document.getElementById('installModal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        window.closeInstallModal = function () {
+            document.getElementById('installModal').classList.add('hidden');
+        };
+
+        window.dismissInstallBanner = function () {
+            document.getElementById('pixelInstallBanner').classList.add('hidden');
+            try { localStorage.setItem('swasthyathali_hide_install_banner', '1'); } catch (e) {}
+        };
+
+        // -------------------- B. BEVERAGE CATALOG (TEA & COFFEE) --------------------
+        const BEVERAGE_OPTIONS = [
+            { id: 'milk_tea_nosugar', name: 'Milk Tea (No Sugar)', calories: 35, carbs: 3, protein: 1, note: 'Cardamom / Ginger' },
+            { id: 'milk_coffee_nosugar', name: 'Milk Coffee (No Sugar)', calories: 45, carbs: 4, protein: 2, note: 'Skim/Toned Milk' },
+            { id: 'black_coffee', name: 'Black Coffee', calories: 2, carbs: 0, protein: 0, note: 'Fasting-safe' },
+            { id: 'green_black_tea', name: 'Green / Black Tea', calories: 2, carbs: 0, protein: 0, note: 'Fasting-safe' },
+            { id: 'lemon_ginger_tea', name: 'Lemon Ginger Tea', calories: 5, carbs: 1, protein: 0, note: 'Unsweetened' }
+        ];
+
+        // -------------------- C. CURATED 4-CUISINE MEAL DATABASE --------------------
+        const DEFAULT_MEALS = [
+            // === CONTINENTAL (NON-VEG) ===
+            {
+                id: 'con-nv-1',
+                name: 'Herb-Grilled Chicken Breast, Sautéed Zucchini & Quinoa',
+                cuisine: 'Continental',
+                isVeg: false,
+                type: 'main',
+                prepTime: '20 min',
+                calories: 790,
+                protein: 66,
+                fiber: 14,
+                carbs: 38,
+                steps: [
+                    'Season 220g chicken breast with olive oil, garlic, oregano, and black pepper; pan-grill 6 mins per side until juicy.',
+                    'Toss 2 cups sliced zucchini and bell peppers in the same pan and serve with 1/2 cup cooked quinoa.'
+                ],
+                ingredients: [
+                    { name: 'Chicken breast (220g)', category: 'Fish, Poultry & Eggs' },
+                    { name: 'Zucchini & bell peppers (2 cups)', category: 'Vegetables & Greens' },
+                    { name: 'Quinoa (1/2 cup cooked)', category: 'Pantry & Spices' },
+                    { name: 'Olive oil, garlic & dried oregano', category: 'Pantry & Spices' }
+                ]
+            },
+            {
+                id: 'con-nv-2',
+                name: 'Lemon-Butter Pan-Seared Fish Fillet & Roasted Broccoli',
+                cuisine: 'Continental',
+                isVeg: false,
+                type: 'main',
+                prepTime: '18 min',
+                calories: 775,
+                protein: 62,
+                fiber: 13,
+                carbs: 32,
+                steps: [
+                    'Pan-sear 220g Bhetki or Basa fillet in 1.5 tsp olive oil and 1/2 tsp butter with lemon zest, capers/pepper, and garlic.',
+                    'Serve alongside 2 cups garlic-roasted broccoli and 1 slice toasted multigrain sourdough bread.'
+                ],
+                ingredients: [
+                    { name: 'Bhetki or Basa fish fillet (220g)', category: 'Fish, Poultry & Eggs' },
+                    { name: 'Broccoli florets (2 cups)', category: 'Vegetables & Greens' },
+                    { name: 'Multigrain sourdough bread (1 slice)', category: 'Pantry & Spices' },
+                    { name: 'Olive oil, butter & lemon', category: 'Pantry & Spices' }
+                ]
+            },
+            {
+                id: 'con-nv-3',
+                name: 'Spanish Spinach & Mushroom Omelette with Avocado Toast',
+                cuisine: 'Continental',
+                isVeg: false,
+                type: 'main',
+                prepTime: '15 min',
+                calories: 780,
+                protein: 46,
+                fiber: 16,
+                carbs: 34,
+                steps: [
+                    'Whisk 3 whole eggs + 2 egg whites with black pepper and herbs; fold over sautéed mushrooms, spinach, and 20g grated cheese.',
+                    'Serve with 1/2 sliced avocado over 1 slice toasted seeded multigrain bread.'
+                ],
+                ingredients: [
+                    { name: 'Eggs (5 eggs: 3 whole + 2 whites)', category: 'Fish, Poultry & Eggs' },
+                    { name: 'Button mushrooms & spinach (2 cups)', category: 'Vegetables & Greens' },
+                    { name: 'Avocado (1/2) & seeded multigrain toast (1)', category: 'Vegetables & Greens' }
+                ]
+            },
+            {
+                id: 'con-nv-4',
+                name: 'Garlic-Herb Prawn & Chickpea Mediterranean Bowl',
+                cuisine: 'Continental',
+                isVeg: false,
+                type: 'main',
+                prepTime: '18 min',
+                calories: 795,
+                protein: 60,
+                fiber: 16,
+                carbs: 40,
+                steps: [
+                    'Sauté 220g prawns in 2 tsp olive oil with crushed garlic, chili flakes, and parsley for 4–5 minutes.',
+                    'Toss over a warm bowl of 3/4 cup boiled chickpeas, cucumber, cherry tomatoes, and lemon-olive oil dressing.'
+                ],
+                ingredients: [
+                    { name: 'Cleaned prawns (220g)', category: 'Fish, Poultry & Eggs' },
+                    { name: 'Boiled chickpeas / Kabuli chana (3/4 cup)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Cucumber, cherry tomatoes & parsley', category: 'Vegetables & Greens' }
+                ]
+            },
+
+            // === CONTINENTAL (PURE-VEG) ===
+            {
+                id: 'con-v-1',
+                name: 'Grilled Cottage Cheese (Paneer) Steak & Pesto Veggies',
+                cuisine: 'Continental',
+                isVeg: true,
+                type: 'main',
+                prepTime: '20 min',
+                calories: 805,
+                protein: 48,
+                fiber: 15,
+                carbs: 36,
+                steps: [
+                    'Marinate 200g thick paneer slices in olive oil, garlic, rosemary, and black pepper; grill on a non-stick pan until golden.',
+                    'Serve over 2 cups sautéed French beans, broccoli, and bell peppers with 1/2 cup cooked quinoa.'
+                ],
+                ingredients: [
+                    { name: 'Low-fat Paneer block (200g)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'French beans, broccoli & peppers (2 cups)', category: 'Vegetables & Greens' },
+                    { name: 'Quinoa (1/2 cup cooked)', category: 'Pantry & Spices' }
+                ]
+            },
+            {
+                id: 'con-v-2',
+                name: 'Creamy Mushroom, Spinach & White Bean Skillet with Toast',
+                cuisine: 'Continental',
+                isVeg: true,
+                type: 'main',
+                prepTime: '18 min',
+                calories: 785,
+                protein: 38,
+                fiber: 19,
+                carbs: 54,
+                steps: [
+                    'Sauté 2 cups sliced mushrooms and 2 cups baby spinach in olive oil and garlic; stir in 1 cup boiled white kidney beans (lobia/cannellini) and 3 tbsp Greek yogurt.',
+                    'Season with thyme and cracked pepper; serve with 1 slice toasted multigrain bread.'
+                ],
+                ingredients: [
+                    { name: 'White beans / Lobia (1 cup boiled)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Mushrooms & baby spinach (4 cups raw)', category: 'Vegetables & Greens' },
+                    { name: 'Plain Greek yogurt / Hung curd (3 tbsp)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Multigrain bread (1 slice)', category: 'Pantry & Spices' }
+                ]
+            },
+
+            // === BENGALI (NON-VEG) ===
+            {
+                id: 'ben-nv-1',
+                name: 'Rui Macher Patla Jhol with Jhinge & Brown Rice',
+                cuisine: 'Bengali',
+                isVeg: false,
+                type: 'main',
+                prepTime: '25 min',
+                calories: 810,
+                protein: 62,
+                fiber: 14,
+                carbs: 46,
+                steps: [
+                    'Lightly sear 220g turmeric-salted Rui steaks in 1.5 tsp mustard oil; simmer in a cumin-ginger broth with ridge gourd (jhinge) and raw papaya.',
+                    'Serve with 2/3 cup cooked brown rice and sliced cucumber-lemon salad.'
+                ],
+                ingredients: [
+                    { name: 'Rui (Rohu) fish steaks (220g)', category: 'Fish, Poultry & Eggs' },
+                    { name: 'Ridge gourd / Jhinge & raw papaya', category: 'Vegetables & Greens' },
+                    { name: 'Brown rice (2/3 cup cooked)', category: 'Pantry & Spices' },
+                    { name: 'Mustard oil, cumin & ginger', category: 'Pantry & Spices' }
+                ]
+            },
+            {
+                id: 'ben-nv-2',
+                name: 'Shorshe Pabda / Katla with Palong Shaak',
+                cuisine: 'Bengali',
+                isVeg: false,
+                type: 'main',
+                prepTime: '20 min',
+                calories: 800,
+                protein: 58,
+                fiber: 13,
+                carbs: 42,
+                steps: [
+                    'Simmer 220g Pabda or Katla fillets in a mustard-yogurt-turmeric gravy tempered with kalonji and green chilies for 8 minutes.',
+                    'Serve alongside garlic-sautéed spinach (palong shaak) and 1/2 cup brown rice.'
+                ],
+                ingredients: [
+                    { name: 'Pabda or Katla fish (220g)', category: 'Fish, Poultry & Eggs' },
+                    { name: 'Fresh spinach / Palong shaak (2 cups)', category: 'Vegetables & Greens' },
+                    { name: 'Tok doi / Plain yogurt (2 tbsp)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Brown rice (1/2 cup cooked)', category: 'Pantry & Spices' }
+                ]
+            },
+            {
+                id: 'ben-nv-3',
+                name: 'Bengali Doi Murgi with Lau Ghonto & Multigrain Roti',
+                cuisine: 'Bengali',
+                isVeg: false,
+                type: 'main',
+                prepTime: '28 min',
+                calories: 820,
+                protein: 68,
+                fiber: 15,
+                carbs: 44,
+                steps: [
+                    'Slow-cook 220g skinless chicken marinated in 1/2 cup whisked tok doi, ginger-garlic, and whole garam masala until tender.',
+                    'Pair with cumin-tempered bottle gourd (lau ghonto) and 1.5 high-fiber multigrain rotis.'
+                ],
+                ingredients: [
+                    { name: 'Chicken breast/thigh skinless (220g)', category: 'Fish, Poultry & Eggs' },
+                    { name: 'Bottle gourd / Lau (2 cups diced)', category: 'Vegetables & Greens' },
+                    { name: 'Tok doi / Plain curd (1/2 cup)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Multigrain atta roti (1.5 rotis)', category: 'Pantry & Spices' }
+                ]
+            },
+            {
+                id: 'ben-nv-4',
+                name: 'Kolkata Style Dim Tadka with 2 Multigrain Rotis',
+                cuisine: 'Bengali',
+                isVeg: false,
+                type: 'main',
+                prepTime: '20 min',
+                calories: 790,
+                protein: 52,
+                fiber: 18,
+                carbs: 54,
+                steps: [
+                    'Scramble 3 egg whites + 1 whole egg with onions, tomatoes, ginger, and kasuri methi; fold into 1.5 cups boiled whole green moong dal.',
+                    'Simmer 5 minutes and serve hot with 2 multigrain rotis and cucumber salad.'
+                ],
+                ingredients: [
+                    { name: 'Eggs (4 eggs: 3 whites + 1 whole)', category: 'Fish, Poultry & Eggs' },
+                    { name: 'Whole green moong dal (1.5 cups cooked)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Multigrain atta roti (2 rotis)', category: 'Pantry & Spices' }
+                ]
+            },
+            {
+                id: 'ben-nv-5',
+                name: 'Gondhoraj Pan-Seared Bhetki & Masoor Dal',
+                cuisine: 'Bengali',
+                isVeg: false,
+                type: 'main',
+                prepTime: '20 min',
+                calories: 785,
+                protein: 64,
+                fiber: 15,
+                carbs: 38,
+                steps: [
+                    'Marinate 220g Bhetki fillets in Gondhoraj lime juice, black pepper, and 1.5 tsp oil; pan-sear 4 mins per side.',
+                    'Serve with 1 cup kalonji-tempered masoor dal and sautéed green beans.'
+                ],
+                ingredients: [
+                    { name: 'Bhetki fish fillet (220g)', category: 'Fish, Poultry & Eggs' },
+                    { name: 'Red lentils / Masoor dal (1 cup cooked)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'French beans & Gondhoraj lime', category: 'Vegetables & Greens' }
+                ]
+            },
+
+            // === BENGALI (PURE-VEG / NIRAMISH) ===
+            {
+                id: 'ben-v-1',
+                name: 'Niramish Chhanar Dalna (No Potato) & Multigrain Roti',
+                cuisine: 'Bengali',
+                isVeg: true,
+                type: 'main',
+                prepTime: '25 min',
+                calories: 805,
+                protein: 48,
+                fiber: 15,
+                carbs: 48,
+                steps: [
+                    'Pan-sear 200g kneaded chhana (paneer) patties; simmer in a ginger-tomato-cumin gravy with cauliflower florets (replacing potatoes).',
+                    'Serve with 1.5 high-fiber multigrain rotis.'
+                ],
+                ingredients: [
+                    { name: 'Fresh Chhana / Low-fat Paneer (200g)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Cauliflower florets & tomatoes', category: 'Vegetables & Greens' },
+                    { name: 'Multigrain atta roti (1.5 rotis)', category: 'Pantry & Spices' }
+                ]
+            },
+            {
+                id: 'ben-v-2',
+                name: 'Traditional Shukto, Biulir Dal & Brown Rice',
+                cuisine: 'Bengali',
+                isVeg: true,
+                type: 'main',
+                prepTime: '30 min',
+                calories: 785,
+                protein: 38,
+                fiber: 22,
+                carbs: 62,
+                steps: [
+                    'Simmer bitter gourd (karela), drumsticks, and brinjal in a light milk-radhuni-mustard gravy topped with 5 roasted urad bori.',
+                    'Pair with 1.5 cups fennel-ginger Biulir dal (urad dal) and 1/2 cup brown rice.'
+                ],
+                ingredients: [
+                    { name: 'Karela, drumsticks & brinjal mix', category: 'Vegetables & Greens' },
+                    { name: 'Biulir dal / Urad dal (1.5 cups cooked)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Urad dal bori (5 pieces) & Brown rice (1/2 cup)', category: 'Pantry & Spices' }
+                ]
+            },
+            {
+                id: 'ben-v-3',
+                name: 'Mochar Ghonto with Chhola & Chhanar Bhurji',
+                cuisine: 'Bengali',
+                isVeg: true,
+                type: 'main',
+                prepTime: '25 min',
+                calories: 815,
+                protein: 46,
+                fiber: 24,
+                carbs: 58,
+                steps: [
+                    'Cook pre-chopped boiled banana blossom (mocha) with 3/4 cup boiled black chhola, roasted cumin, and ginger.',
+                    'Serve alongside 120g panch-phoron crumbled chhana (paneer) and 1 multigrain roti.'
+                ],
+                ingredients: [
+                    { name: 'Banana blossom / Mocha (2 cups)', category: 'Vegetables & Greens' },
+                    { name: 'Black chickpeas / Chhola (3/4 cup boiled)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Fresh Chhana / Paneer (120g) & 1 Roti', category: 'Paneer, Tofu & Lentils' }
+                ]
+            },
+            {
+                id: 'ben-v-4',
+                name: 'Paneer Stuffed Moong Dal Chilla & Bandhakopi Torkari',
+                cuisine: 'Bengali',
+                isVeg: true,
+                type: 'main',
+                prepTime: '20 min',
+                calories: 800,
+                protein: 50,
+                fiber: 18,
+                carbs: 54,
+                steps: [
+                    'Cook 2 savory yellow moong dal crepes stuffed with 150g spiced crumbled paneer and spinach.',
+                    'Serve with 1.5 cups Bengali cabbage-green pea stir-fry (no potatoes).'
+                ],
+                ingredients: [
+                    { name: 'Yellow moong dal batter & Paneer (150g)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Cabbage, spinach & green peas', category: 'Vegetables & Greens' }
+                ]
+            },
+
+            // === INDIAN (NON-VEG & VEG) ===
+            {
+                id: 'ind-nv-1',
+                name: 'Tandoori Chicken Breast & Palak Curry with Roti',
+                cuisine: 'Indian',
+                isVeg: false,
+                type: 'main',
+                prepTime: '25 min',
+                calories: 810,
+                protein: 72,
+                fiber: 15,
+                carbs: 42,
+                steps: [
+                    'Pan-grill 220g yogurt-and-tandoori-spiced chicken breast strips until charred and juicy.',
+                    'Serve with 1.5 cups garlic-tempered pureed spinach (palak), 1/2 cup boiled chickpeas, and 1 multigrain roti.'
+                ],
+                ingredients: [
+                    { name: 'Chicken breast (220g)', category: 'Fish, Poultry & Eggs' },
+                    { name: 'Fresh spinach / Palak (2.5 cups)', category: 'Vegetables & Greens' },
+                    { name: 'Kabuli chana (1/2 cup) & 1 Multigrain roti', category: 'Paneer, Tofu & Lentils' }
+                ]
+            },
+            {
+                id: 'ind-nv-2',
+                name: 'Methi Chicken Curry with Jowar Roti & Kachumber',
+                cuisine: 'Indian',
+                isVeg: false,
+                type: 'main',
+                prepTime: '25 min',
+                calories: 795,
+                protein: 65,
+                fiber: 16,
+                carbs: 45,
+                steps: [
+                    'Cook 220g chicken pieces with 1.5 cups fresh fenugreek leaves (methi), onions, tomatoes, and coriander.',
+                    'Serve with 1.5 jowar (sorghum) rotis and cucumber-radish salad.'
+                ],
+                ingredients: [
+                    { name: 'Chicken curry cut (220g)', category: 'Fish, Poultry & Eggs' },
+                    { name: 'Fresh methi leaves & cucumber salad', category: 'Vegetables & Greens' },
+                    { name: 'Jowar roti (1.5 rotis)', category: 'Pantry & Spices' }
+                ]
+            },
+            {
+                id: 'ind-v-1',
+                name: 'Paneer Bhurji with Bell Peppers & 2 Besan Chillas',
+                cuisine: 'Indian',
+                isVeg: true,
+                type: 'main',
+                prepTime: '20 min',
+                calories: 815,
+                protein: 52,
+                fiber: 16,
+                carbs: 48,
+                steps: [
+                    'Sauté 180g crumbled low-fat paneer with diced capsicum, onions, tomatoes, and roasted cumin.',
+                    'Pair with 2 thin besan (gram flour) chillas mixed with 1 tbsp ground flaxseed.'
+                ],
+                ingredients: [
+                    { name: 'Low-fat Paneer (180g) & Besan (1/2 cup)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Capsicum, onion, tomato & flaxseeds', category: 'Vegetables & Greens' }
+                ]
+            },
+            {
+                id: 'ind-v-2',
+                name: 'Rajma Masala, Cabbage Poriyal & Brown Rice',
+                cuisine: 'Indian',
+                isVeg: true,
+                type: 'main',
+                prepTime: '25 min',
+                calories: 805,
+                protein: 36,
+                fiber: 24,
+                carbs: 68,
+                steps: [
+                    'Simmer 1.5 cups boiled kidney beans (rajma) in a light onion-tomato-ginger gravy.',
+                    'Serve with 1.5 cups South Indian cabbage poriyal, 100g plain curd, and 1/2 cup brown rice.'
+                ],
+                ingredients: [
+                    { name: 'Rajma (1.5 cups cooked) & Curd (100g)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Cabbage & grated coconut (1.5 cups)', category: 'Vegetables & Greens' },
+                    { name: 'Brown rice (1/2 cup cooked)', category: 'Pantry & Spices' }
+                ]
+            },
+
+            // === INDO-CHINESE (NON-VEG & VEG) ===
+            {
+                id: 'chi-nv-1',
+                name: 'Pan-Seared Chilli Chicken (No Batter) & Cauliflower Rice',
+                cuisine: 'Chinese',
+                isVeg: false,
+                type: 'main',
+                prepTime: '20 min',
+                calories: 790,
+                protein: 66,
+                fiber: 14,
+                carbs: 34,
+                steps: [
+                    'Pan-sear 220g diced chicken breast in 2 tsp sesame oil with garlic, ginger, and green chilies (no deep-frying or cornflour batter).',
+                    'Toss with bell peppers, broccoli, and 1 tbsp low-sodium soy sauce; serve with 1 cup cauliflower fried rice.'
+                ],
+                ingredients: [
+                    { name: 'Chicken breast diced (220g)', category: 'Fish, Poultry & Eggs' },
+                    { name: 'Broccoli, bell peppers & cauliflower rice', category: 'Vegetables & Greens' },
+                    { name: 'Low-sodium soy sauce & sesame oil', category: 'Pantry & Spices' }
+                ]
+            },
+            {
+                id: 'chi-nv-2',
+                name: 'Burnt Garlic Prawns with Broccoli & Egg Drop Soup',
+                cuisine: 'Chinese',
+                isVeg: false,
+                type: 'main',
+                prepTime: '20 min',
+                calories: 775,
+                protein: 62,
+                fiber: 13,
+                carbs: 30,
+                steps: [
+                    'Stir-fry 220g prawns and 2 cups broccoli florets in 2 tsp sesame oil with crushed garlic, black pepper, and soy sauce.',
+                    'Serve with a warm bowl of 2-egg drop clear mushroom and spring onion soup.'
+                ],
+                ingredients: [
+                    { name: 'Prawns (220g) & 2 whole eggs', category: 'Fish, Poultry & Eggs' },
+                    { name: 'Broccoli, mushrooms & spring onions', category: 'Vegetables & Greens' }
+                ]
+            },
+            {
+                id: 'chi-v-1',
+                name: 'Crispy Tofu & Bell Pepper Stir-Fry with Cauliflower Rice',
+                cuisine: 'Chinese',
+                isVeg: true,
+                type: 'main',
+                prepTime: '20 min',
+                calories: 785,
+                protein: 46,
+                fiber: 18,
+                carbs: 38,
+                steps: [
+                    'Pan-sear 220g cubed extra-firm tofu until golden; toss with ginger, garlic, French beans, bell peppers, and 1 tbsp soy sauce.',
+                    'Serve over 1.5 cups garlic-tossed cauliflower fried rice with toasted sesame seeds.'
+                ],
+                ingredients: [
+                    { name: 'Extra-firm Tofu (220g)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Cauliflower rice, bell peppers & beans', category: 'Vegetables & Greens' }
+                ]
+            },
+            {
+                id: 'chi-v-2',
+                name: 'Pan-Seared Chilli Paneer & Hot-and-Sour Veg Soup',
+                cuisine: 'Chinese',
+                isVeg: true,
+                type: 'main',
+                prepTime: '20 min',
+                calories: 805,
+                protein: 48,
+                fiber: 15,
+                carbs: 36,
+                steps: [
+                    'Pan-sear 200g paneer cubes without batter; toss with garlic, chilies, spring onions, capsicum, and soy-vinegar glaze.',
+                    'Pair with a large bowl of shredded cabbage, mushroom, and carrot clear hot-and-sour soup.'
+                ],
+                ingredients: [
+                    { name: 'Paneer (200g)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Mushrooms, cabbage, carrots & capsicum', category: 'Vegetables & Greens' }
+                ]
+            },
+
+            // === OPTIONAL LIGHT SNACKS (ALL 4 CUISINES) ===
+            {
+                id: 'snk-v-1',
+                name: 'Bengali Sprouted Chhola & Muri Jhalmuri Bowl',
+                cuisine: 'Bengali',
+                isVeg: true,
+                type: 'snack',
+                prepTime: '5 min',
+                calories: 245,
+                protein: 12,
+                fiber: 8,
+                carbs: 32,
+                steps: [
+                    'Toss 3/4 cup boiled black chhola with 1/2 cup puffed rice (muri), cucumber, tomato, green chili, and 1 tsp mustard oil.',
+                    'Finish with lemon juice and roasted cumin powder.'
+                ],
+                ingredients: [
+                    { name: 'Black chhola (3/4 cup) & Muri (1/2 cup)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Cucumber, tomato & lemon', category: 'Vegetables & Greens' }
+                ]
+            },
+            {
+                id: 'snk-v-2',
+                name: 'Thick Tok Doi (Hung Curd) with Pumpkin & Chia Seeds',
+                cuisine: 'Bengali',
+                isVeg: true,
+                type: 'snack',
+                prepTime: '3 min',
+                calories: 235,
+                protein: 18,
+                fiber: 6,
+                carbs: 12,
+                steps: [
+                    'Spoon 200g plain thick tok doi or Greek yogurt into a bowl.',
+                    'Top with 1 tbsp roasted pumpkin seeds, 1 tsp chia seeds, and a pinch of cinnamon.'
+                ],
+                ingredients: [
+                    { name: 'Thick Tok Doi / Greek yogurt (200g)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Pumpkin seeds & chia seeds', category: 'Pantry & Spices' }
+                ]
+            },
+            {
+                id: 'snk-v-3',
+                name: 'Ghee-Roasted Makhana & Almonds',
+                cuisine: 'Indian',
+                isVeg: true,
+                type: 'snack',
+                prepTime: '7 min',
+                calories: 240,
+                protein: 9,
+                fiber: 5,
+                carbs: 22,
+                steps: [
+                    'Dry-roast 1.5 cups makhana (fox nuts) with 1 tsp ghee, turmeric, and black pepper until crunchy.',
+                    'Pair with 10 raw almonds.'
+                ],
+                ingredients: [
+                    { name: 'Makhana (1.5 cups) & Raw almonds (10)', category: 'Pantry & Spices' }
+                ]
+            },
+            {
+                id: 'snk-v-4',
+                name: 'Greek Hummus with Cucumber & Carrot Sticks',
+                cuisine: 'Continental',
+                isVeg: true,
+                type: 'snack',
+                prepTime: '5 min',
+                calories: 225,
+                protein: 10,
+                fiber: 7,
+                carbs: 20,
+                steps: [
+                    'Serve 4 tbsp chickpea hummus drizzled with 1/2 tsp olive oil and paprika.',
+                    'Pair with 1.5 cups crisp cucumber and carrot batons.'
+                ],
+                ingredients: [
+                    { name: 'Chickpea hummus (4 tbsp)', category: 'Paneer, Tofu & Lentils' },
+                    { name: 'Cucumber & carrots (1.5 cups)', category: 'Vegetables & Greens' }
+                ]
+            },
+            {
+                id: 'snk-nv-1',
+                name: 'Herbed Boiled Eggs & Cherry Tomatoes',
+                cuisine: 'Continental',
+                isVeg: false,
+                type: 'snack',
+                prepTime: '10 min',
+                calories: 225,
+                protein: 19,
+                fiber: 3,
+                carbs: 6,
+                steps: [
+                    'Slice 2 whole boiled eggs + 1 egg white; season with sea salt, cracked pepper, and oregano.',
+                    'Serve with 1 cup cherry tomatoes and cucumber slices.'
+                ],
+                ingredients: [
+                    { name: 'Eggs (3 eggs for snack)', category: 'Fish, Poultry & Eggs' },
+                    { name: 'Cherry tomatoes & cucumber', category: 'Vegetables & Greens' }
+                ]
+            },
+            {
+                id: 'snk-v-5',
+                name: 'Clear Mushroom, Tofu & Bok Choy Garlic Broth',
+                cuisine: 'Chinese',
+                isVeg: true,
+                type: 'snack',
+                prepTime: '10 min',
+                calories: 195,
+                protein: 13,
+                fiber: 5,
+                carbs: 14,
+                steps: [
+                    'Simmer sliced mushrooms, spinach/bok choy, ginger, and garlic in clear stock with 60g cubed tofu.',
+                    'Finish with 1 tsp soy sauce, white pepper, and spring onions.'
+                ],
+                ingredients: [
+                    { name: 'Mushrooms, spinach & Tofu (60g)', category: 'Vegetables & Greens' }
+                ]
+            }
+        ];
+
+        // -------------------- D. APP STATE & CLOUD + LOCAL STORAGE --------------------
+        const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const STORAGE_KEY = 'swasthyathali_pixel_v2';
+
+        let appState = {
+            selectedDay: 'Monday',
+            preferences: {
+                calories: 1900,
+                eatingWindow: '12:00 PM – 7:00 PM (17:7 Fast)',
+                exclusions: 'White sugar, potatoes, deep-fried snacks, refined maida, protein powders',
+                cuisines: ['Continental', 'Bengali', 'Indian', 'Chinese'],
+                pureVegDays: ['Tuesday', 'Saturday'],
+                defaultBeverages: {
+                    milk_tea_nosugar: 2,
+                    milk_coffee_nosugar: 0,
+                    black_coffee: 1,
+                    green_black_tea: 1,
+                    lemon_ginger_tea: 0
+                }
+            },
+            customMeals: [],
+            weeklyPlan: {},
+            dailyBeverages: {}, // { Monday: { milk_tea_nosugar: 2, black_coffee: 1, ... } }
+            checkedGroceries: {}
+        };
+
+        let swapContext = { day: null, slot: null, filter: 'ALL' };
+        let db = null;
+        let currentUser = null;
+        let cloudDocRef = null;
+        let saveDebounceTimer = null;
+
+        function getAllMeals() {
+            return [...DEFAULT_MEALS, ...appState.customMeals];
+        }
+
+        function getMealById(id) {
+            return getAllMeals().find(m => m.id === id) || DEFAULT_MEALS[0];
+        }
+
+        function setSyncBadge(status) {
+            const textEl = document.getElementById('syncStatusText');
+            if (!textEl) return;
+            textEl.textContent = status;
+        }
+
+        function buildDefaultDayPlan(day, idx) {
+            const isVegDay = appState.preferences.pureVegDays.includes(day);
+            const allowedCuisines = appState.preferences.cuisines.length ? appState.preferences.cuisines : ['Continental', 'Bengali', 'Indian', 'Chinese'];
+            const allMeals = getAllMeals();
+
+            const mains = allMeals.filter(m =>
+                m.type === 'main' &&
+                allowedCuisines.includes(m.cuisine) &&
+                (!isVegDay || m.isVeg)
+            );
+            const snacks = allMeals.filter(m =>
+                m.type === 'snack' &&
+                (!isVegDay || m.isVeg)
+            );
+
+            const m1 = mains[idx % mains.length] || allMeals.find(m => m.type === 'main' && m.isVeg);
+            const m2Pool = mains.filter(m => m.id !== m1.id);
+            const m2 = m2Pool[(idx + 1) % m2Pool.length] || m1;
+            const snk = snacks[idx % snacks.length] || allMeals.find(m => m.type === 'snack' && m.isVeg);
+
+            return {
+                meal1: m1.id,
+                meal2: m2.id,
+                snack: snk.id,
+                includeSnack: true
+            };
+        }
+
+        function ensureIntegrity() {
+            DAYS_OF_WEEK.forEach((day, idx) => {
+                if (!appState.weeklyPlan[day]) {
+                    appState.weeklyPlan[day] = buildDefaultDayPlan(day, idx);
+                }
+                if (!appState.dailyBeverages[day]) {
+                    appState.dailyBeverages[day] = { ...appState.preferences.defaultBeverages };
+                }
+            });
+        }
+
+        function loadLocalState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    appState = {
+                        ...appState,
+                        ...parsed,
+                        preferences: {
+                            ...appState.preferences,
+                            ...(parsed.preferences || {}),
+                            defaultBeverages: {
+                                ...appState.preferences.defaultBeverages,
+                                ...((parsed.preferences && parsed.preferences.defaultBeverages) || {})
+                            }
+                        }
+                    };
+                }
+            } catch (e) {
+                console.warn('Local load note:', e);
+            }
+            ensureIntegrity();
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            } catch (e) {}
+
+            if (cloudDocRef && currentUser) {
+                setSyncBadge('Saving...');
+                clearTimeout(saveDebounceTimer);
+                saveDebounceTimer = setTimeout(async () => {
+                    try {
+                        await setDoc(cloudDocRef, {
+                            stateJson: JSON.stringify(appState),
+                            updatedAt: Date.now()
+                        });
+                        setSyncBadge('Pixel + Cloud');
+                    } catch (err) {
+                        setSyncBadge('Saved on Phone');
+                    }
+                }, 600);
+            } else {
+                setSyncBadge('Saved on Phone');
+            }
+        }
+
+        async function initFirebaseSync() {
+            try {
+                if (typeof __firebase_config === 'undefined') {
+                    setSyncBadge('Saved on Phone');
+                    return;
+                }
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'swasthyathali-app';
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                db = getFirestore(app);
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (!user) return;
+                    currentUser = user;
+                    cloudDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'mealPlanner', 'profileState');
+
+                    const idBadge = document.getElementById('cloudUserIdBadge');
+                    if (idBadge) idBadge.textContent = `Cloud ID: ${user.uid.slice(0, 10)}...`;
+
+                    try {
+                        const snap = await getDoc(cloudDocRef);
+                        if (snap.exists() && snap.data().stateJson) {
+                            const remoteState = JSON.parse(snap.data().stateJson);
+                            appState = {
+                                ...appState,
+                                ...remoteState,
+                                preferences: { ...appState.preferences, ...(remoteState.preferences || {}) }
+                            };
+                            ensureIntegrity();
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+                            window.renderPlanner();
+                        } else {
+                            await setDoc(cloudDocRef, {
+                                stateJson: JSON.stringify(appState),
+                                updatedAt: Date.now()
+                            });
+                        }
+                        setSyncBadge('Pixel + Cloud');
+                    } catch (e) {
+                        setSyncBadge('Saved on Phone');
+                    }
+                });
+            } catch (e) {
+                setSyncBadge('Saved on Phone');
+            }
+        }
+
+        // -------------------- E. UI RENDERING & INTERACTIONS --------------------
+        window.showToast = function (msg) {
+            const banner = document.getElementById('toastBanner');
+            const text = document.getElementById('toastText');
+            text.textContent = msg;
+            banner.classList.remove('hidden');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
+                banner.classList.add('hidden');
+            }, 2800);
+        };
+
+        window.switchTab = function (tabName) {
+            ['planner', 'prep', 'preferences'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+
+                const dBtn = document.getElementById(`dtab-${t}`);
+                if (dBtn) {
+                    dBtn.classList.remove('bg-white', 'text-[#16302B]', 'shadow-sm');
+                    dBtn.classList.add('text-emerald-100');
+                }
+
+                const mBtn = document.getElementById(`mtab-${t}`);
+                if (mBtn) {
+                    mBtn.classList.remove('bg-emerald-50', 'text-[#16302B]', 'font-bold');
+                    mBtn.classList.add('text-slate-500', 'font-semibold');
+                }
+            });
+
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+
+            const activeD = document.getElementById(`dtab-${tabName}`);
+            if (activeD) {
+                activeD.classList.add('bg-white', 'text-[#16302B]', 'shadow-sm');
+                activeD.classList.remove('text-emerald-100');
+            }
+
+            const activeM = document.getElementById(`mtab-${tabName}`);
+            if (activeM) {
+                activeM.classList.add('bg-emerald-50', 'text-[#16302B]', 'font-bold');
+                activeM.classList.remove('text-slate-500', 'font-semibold');
+            }
+
+            if (tabName === 'prep') window.renderGroceryList();
+            if (tabName === 'preferences') window.renderPreferencesForm();
+            lucide.createIcons();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        function renderHeaderSummary() {
+            const { calories, eatingWindow, cuisines } = appState.preferences;
+            const shortWin = eatingWindow.split('(')[0].trim();
+            document.getElementById('headerSubtitle').textContent = `${calories.toLocaleString()} kcal • ${shortWin} • ${cuisines.length} Cuisines`;
+            document.getElementById('displayEatingWindow').textContent = eatingWindow;
+            document.getElementById('macroCalTarget').textContent = `/ ${calories.toLocaleString()}`;
+        }
+
+        function renderDaySelector() {
+            const grid = document.getElementById('daySelectorGrid');
+            grid.innerHTML = '';
+
+            DAYS_OF_WEEK.forEach(day => {
+                const isSelected = appState.selectedDay === day;
+                const isVeg = appState.preferences.pureVegDays.includes(day);
+                const shortName = day.slice(0, 3);
+
+                const btn = document.createElement('button');
+                btn.onclick = () => {
+                    appState.selectedDay = day;
+                    saveState();
+                    window.renderPlanner();
+                };
+
+                btn.className = `flex flex-col items-center justify-center py-2.5 px-1 rounded-xl border transition-all ${
+                    isSelected
+                        ? 'bg-[#16302B] text-white border-[#16302B] shadow-xs'
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                }`;
+
+                btn.innerHTML = `
+                    <span class="text-xs sm:text-sm font-bold">${shortName}</span>
+                    <span class="mt-1 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold tracking-tight ${
+                        isVeg
+                            ? (isSelected ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-800')
+                            : (isSelected ? 'bg-white/15 text-emerald-100' : 'bg-slate-200/70 text-slate-600')
+                    }">${isVeg ? 'VEG' : 'MIX'}</span>
+                `;
+                grid.appendChild(btn);
+            });
+        }
+
+        function renderBeverageTracker(day) {
+            const dayBev = appState.dailyBeverages[day] || {};
+            const grid = document.getElementById('beverageCountersGrid');
+            grid.innerHTML = '';
+
+            let totalCups = 0;
+            let totalBevCal = 0;
+            let totalBevCarbs = 0;
+            let totalBevPro = 0;
+
+            BEVERAGE_OPTIONS.forEach(bev => {
+                const count = dayBev[bev.id] || 0;
+                totalCups += count;
+                totalBevCal += count * bev.calories;
+                totalBevCarbs += count * bev.carbs;
+                totalBevPro += count * bev.protein;
+
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-xl border transition-all flex flex-col justify-between gap-2 ${
+                    count > 0 ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-50 border-slate-200/80'
+                }`;
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between gap-1">
+                            <span class="text-xs font-bold text-slate-900 leading-tight">${bev.name}</span>
+                        </div>
+                        <span class="text-[11px] text-slate-500 block mt-0.5">${bev.calories} kcal • ${bev.carbs}g carbs • ${bev.note}</span>
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <span class="text-xs font-bold ${count > 0 ? 'text-amber-900' : 'text-slate-400'}">${count} ${count === 1 ? 'cup' : 'cups'}</span>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="updateBeverageCount('${bev.id}', -1)" class="w-7 h-7 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 font-bold flex items-center justify-center text-sm" aria-label="Decrease ${bev.name}">−</button>
+                            <button onclick="updateBeverageCount('${bev.id}', 1)" class="w-7 h-7 rounded-lg bg-[#16302B] hover:bg-emerald-900 text-white font-bold flex items-center justify-center text-sm" aria-label="Increase ${bev.name}">+</button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            document.getElementById('bevDaySummaryBadge').textContent = `${totalCups} cups • ${totalBevCal} kcal • ${totalBevCarbs}g carbs`;
+            return { totalBevCal, totalBevCarbs, totalBevPro };
+        }
+
+        window.updateBeverageCount = function (bevId, delta) {
+            const day = appState.selectedDay;
+            if (!appState.dailyBeverages[day]) appState.dailyBeverages[day] = {};
+            const current = appState.dailyBeverages[day][bevId] || 0;
+            appState.dailyBeverages[day][bevId] = Math.max(0, Math.min(10, current + delta));
+            saveState();
+            window.renderPlanner();
+        };
+
+        window.renderPlanner = function () {
+            renderHeaderSummary();
+            renderDaySelector();
+
+            const day = appState.selectedDay;
+            const isVegDay = appState.preferences.pureVegDays.includes(day);
+            let dayPlan = appState.weeklyPlan[day];
+
+            if (isVegDay) {
+                const m1 = getMealById(dayPlan.meal1);
+                const m2 = getMealById(dayPlan.meal2);
+                const snk = getMealById(dayPlan.snack);
+                if (!m1.isVeg || !m2.isVeg || !snk.isVeg) {
+                    appState.weeklyPlan[day] = buildDefaultDayPlan(day, DAYS_OF_WEEK.indexOf(day));
+                    dayPlan = appState.weeklyPlan[day];
+                    saveState();
+                }
+            }
+
+            document.getElementById('activeDayTitle').textContent = day;
+            const badge = document.getElementById('activeDayBadge');
+            if (isVegDay) {
+                badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1.5';
+                badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-600"></span> Pure-Vegetarian (Niramish) Day';
+            } else {
+                badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200 inline-flex items-center gap-1.5';
+                badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-orange-600"></span> Non-Veg & Veg Allowed';
+            }
+
+            document.getElementById('daySnackToggle').checked = dayPlan.includeSnack;
+
+            // Render Tea/Coffee & get beverage macros
+            const { totalBevCal, totalBevCarbs, totalBevPro } = renderBeverageTracker(day);
+
+            // Calculate Total Daily Macros (Meals + Optional Snack + Tea/Coffee)
+            const meal1 = getMealById(dayPlan.meal1);
+            const meal2 = getMealById(dayPlan.meal2);
+            const snack = dayPlan.includeSnack ? getMealById(dayPlan.snack) : { calories: 0, protein: 0, fiber: 0, carbs: 0 };
+
+            const totCal = meal1.calories + meal2.calories + snack.calories + totalBevCal;
+            const totPro = meal1.protein + meal2.protein + snack.protein + totalBevPro;
+            const totFib = meal1.fiber + meal2.fiber + snack.fiber;
+            const totCarb = meal1.carbs + meal2.carbs + snack.carbs + totalBevCarbs;
+
+            const targetCal = appState.preferences.calories;
+            document.getElementById('macroCalVal').textContent = `${totCal.toLocaleString()} kcal`;
+            document.getElementById('macroCalBar').style.width = `${Math.min(100, (totCal / targetCal) * 100)}%`;
+
+            document.getElementById('macroProVal').textContent = `${totPro}g`;
+            document.getElementById('macroProBar').style.width = `${Math.min(100, (totPro / 135) * 100)}%`;
+
+            document.getElementById('macroFibVal').textContent = `${totFib}g`;
+            document.getElementById('macroFibBar').style.width = `${Math.min(100, (totFib / 35) * 100)}%`;
+
+            document.getElementById('macroCarbVal').textContent = `${totCarb}g`;
+            document.getElementById('macroCarbBar').style.width = `${Math.min(100, (totCarb / 115) * 100)}%`;
+
+            // Render Meal Cards
+            const container = document.getElementById('mealSlotsContainer');
+            container.innerHTML = '';
+
+            container.appendChild(createMealCard('Meal 1 • Lunch / Break-Fast (~12:00 PM)', 'meal1', meal1));
+            if (dayPlan.includeSnack) {
+                container.appendChild(createMealCard('Optional Light Snack (~4:00 PM)', 'snack', snack));
+            }
+            container.appendChild(createMealCard('Meal 2 • Dinner (~7:00 PM)', 'meal2', meal2));
+
+            lucide.createIcons();
+        };
+
+        function createMealCard(slotLabel, slotKey, meal) {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs hover:border-slate-300 transition-all';
+
+            const vegBadge = meal.isVeg
+                ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                     <span class="w-2 h-2 rounded-full bg-emerald-600"></span> Pure-Veg
+                   </span>`
+                : `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200">
+                     <span class="w-2 h-2 rounded-full bg-orange-600"></span> Non-Veg
+                   </span>`;
+
+            const cuisineColors = {
+                'Continental': 'bg-sky-50 text-sky-800 border-sky-200',
+                'Bengali': 'bg-amber-50 text-amber-800 border-amber-200',
+                'Indian': 'bg-purple-50 text-purple-800 border-purple-200',
+                'Chinese': 'bg-rose-50 text-rose-800 border-rose-200'
+            };
+            const cuisineClass = cuisineColors[meal.cuisine] || 'bg-slate-100 text-slate-700 border-slate-200';
+
+            card.innerHTML = `
+                <div class="flex flex-wrap items-start justify-between gap-3 pb-3.5 border-b border-slate-100">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">${slotLabel}</span>
+                        <h3 class="font-display font-bold text-lg sm:text-xl text-slate-900 leading-snug">${meal.name}</h3>
+                        <div class="flex flex-wrap items-center gap-2 mt-2">
+                            ${vegBadge}
+                            <span class="px-2.5 py-0.5 rounded-lg text-xs font-bold border ${cuisineClass}">${meal.cuisine}</span>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">
+                                <i data-lucide="timer" class="w-3.5 h-3.5 text-slate-500"></i> ${meal.prepTime}
+                            </span>
+                        </div>
+                    </div>
+
+                    <button onclick="openSwapModal('${appState.selectedDay}', '${slotKey}')" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-[#16302B] hover:text-white text-slate-800 text-xs sm:text-sm font-bold transition-colors shrink-0">
+                        <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+                        <span>Swap Meal</span>
+                    </button>
+                </div>
+
+                <!-- Macro Strip -->
+                <div class="grid grid-cols-4 gap-2 py-2.5 my-2.5 bg-slate-50/90 rounded-xl px-3 border border-slate-100 text-center sm:text-left sm:flex sm:items-center sm:gap-6">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase block">Calories</span>
+                        <span class="text-sm font-extrabold text-slate-900">${meal.calories} kcal</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-bold text-emerald-700 uppercase block">Protein</span>
+                        <span class="text-sm font-extrabold text-emerald-800">${meal.protein}g</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-bold text-amber-700 uppercase block">Fiber</span>
+                        <span class="text-sm font-extrabold text-amber-800">${meal.fiber}g</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-bold text-sky-700 uppercase block">Carbs</span>
+                        <span class="text-sm font-extrabold text-sky-800">${meal.carbs}g</span>
+                    </div>
+                </div>
+
+                <!-- Simple 2-Step Prep Guide -->
+                <div class="mt-2.5 space-y-1">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Simple 2-Step Home Prep:</span>
+                    <ol class="list-decimal list-inside text-xs sm:text-sm text-slate-700 space-y-1 leading-relaxed">
+                        ${meal.steps.map(s => `<li>${s}</li>`).join('')}
+                    </ol>
+                </div>
+            `;
+            return card;
+        }
+
+        window.toggleDaySnack = function () {
+            const checked = document.getElementById('daySnackToggle').checked;
+            appState.weeklyPlan[appState.selectedDay].includeSnack = checked;
+            saveState();
+            window.renderPlanner();
+            window.showToast(checked ? 'Light 4:00 PM snack added.' : 'Snack hidden for a strict 2-meal day.');
+        };
+
+        window.shuffleDayMeals = function () {
+            const day = appState.selectedDay;
+            const isVegDay = appState.preferences.pureVegDays.includes(day);
+            const allowedCuisines = appState.preferences.cuisines.length ? appState.preferences.cuisines : ['Continental', 'Bengali', 'Indian', 'Chinese'];
+            const current = appState.weeklyPlan[day];
+            const allMeals = getAllMeals();
+
+            const mains = allMeals.filter(m =>
+                m.type === 'main' &&
+                allowedCuisines.includes(m.cuisine) &&
+                (!isVegDay || m.isVeg)
+            );
+            const snacks = allMeals.filter(m =>
+                m.type === 'snack' &&
+                (!isVegDay || m.isVeg)
+            );
+
+            if (mains.length >= 2) {
+                const shuffled = [...mains].sort(() => Math.random() - 0.5);
+                const pick1 = shuffled.find(m => m.id !== current.meal1) || shuffled[0];
+                const pick2 = shuffled.find(m => m.id !== pick1.id && m.id !== current.meal2) || shuffled[1];
+                current.meal1 = pick1.id;
+                current.meal2 = pick2.id;
+            }
+            if (snacks.length >= 1) {
+                const otherSnacks = snacks.filter(s => s.id !== current.snack);
+                const pickSnk = otherSnacks.length ? otherSnacks[Math.floor(Math.random() * otherSnacks.length)] : snacks[0];
+                current.snack = pickSnk.id;
+            }
+
+            saveState();
+            window.renderPlanner();
+            window.showToast(`Refreshed ${day}'s meals!`);
+        };
+
+        // -------------------- F. SWAP MEAL MODAL --------------------
+        window.openSwapModal = function (day, slot) {
+            swapContext = { day, slot, filter: 'ALL' };
+            const isVegDay = appState.preferences.pureVegDays.includes(day);
+            const slotName = slot === 'meal1' ? 'Meal 1 (Lunch)' : slot === 'meal2' ? 'Meal 2 (Dinner)' : 'Optional Light Snack';
+
+            document.getElementById('swapModalTitle').textContent = `Swap ${slotName} (${day})`;
+            document.getElementById('swapModalSubtitle').textContent = isVegDay
+                ? 'Showing Pure-Vegetarian (Niramish) options only for this day'
+                : 'Choose across Continental, Bengali, Indian, or Chinese menus';
+
+            window.filterSwapList('ALL');
+            document.getElementById('swapModal').classList.remove('hidden');
+            lucide.createIcons();
+        };
+
+        window.closeSwapModal = function () {
+            document.getElementById('swapModal').classList.add('hidden');
+        };
+
+        window.filterSwapList = function (cuisineFilter) {
+            swapContext.filter = cuisineFilter;
+
+            ['ALL', 'Continental', 'Bengali', 'Indian', 'Chinese'].forEach(f => {
+                const btn = document.getElementById(`swapFilter-${f}`);
+                if (!btn) return;
+                if (f === cuisineFilter) {
+                    btn.className = 'px-3 py-1.5 rounded-full text-xs font-bold bg-[#16302B] text-white shrink-0';
+                } else {
+                    btn.className = 'px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 shrink-0';
+                }
+            });
+
+            const { day, slot } = swapContext;
+            const isVegDay = appState.preferences.pureVegDays.includes(day);
+            const targetType = slot === 'snack' ? 'snack' : 'main';
+            const allowedCuisines = appState.preferences.cuisines;
+
+            const candidates = getAllMeals().filter(m => {
+                if (m.type !== targetType) return false;
+                if (isVegDay && !m.isVeg) return false;
+                if (cuisineFilter !== 'ALL' && m.cuisine !== cuisineFilter) return false;
+                if (cuisineFilter === 'ALL' && targetType === 'main' && allowedCuisines.length && !allowedCuisines.includes(m.cuisine)) return false;
+                return true;
+            });
+
+            const listEl = document.getElementById('swapModalList');
+            listEl.innerHTML = '';
+
+            if (candidates.length === 0) {
+                listEl.innerHTML = `<div class="p-6 text-center text-sm text-slate-500">No meals match this filter. Try selecting "All Matching" or enabling this cuisine in Preferences.</div>`;
+                return;
+            }
+
+            candidates.forEach(meal => {
+                const isCurrent = appState.weeklyPlan[day][slot] === meal.id;
+                const item = document.createElement('div');
+                item.className = `p-3.5 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                    isCurrent ? 'border-emerald-600 bg-emerald-50/40' : 'border-slate-200 hover:border-slate-400 bg-white'
+                }`;
+
+                item.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-2 py-0.5 rounded text-[11px] font-bold ${meal.isVeg ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800'}">
+                                ${meal.isVeg ? 'VEG' : 'NON-VEG'}
+                            </span>
+                            <span class="text-xs font-bold text-slate-500">${meal.cuisine} • ${meal.prepTime}</span>
+                        </div>
+                        <h4 class="font-display font-bold text-base text-slate-900">${meal.name}</h4>
+                        <p class="text-xs font-semibold text-slate-600">
+                            ${meal.calories} kcal • <span class="text-emerald-700">${meal.protein}g Protein</span> • <span class="text-amber-700">${meal.fiber}g Fiber</span> • ${meal.carbs}g Carbs
+                        </p>
+                    </div>
+                    <button onclick="selectReplacementMeal('${meal.id}')" class="px-4 py-2 rounded-xl text-xs font-bold shrink-0 transition-colors ${
+                        isCurrent
+                            ? 'bg-emerald-700 text-white'
+                            : 'bg-[#16302B] hover:bg-emerald-800 text-white'
+                    }">
+                        ${isCurrent ? 'Selected' : 'Select'}
+                    </button>
+                `;
+                listEl.appendChild(item);
+            });
+        };
+
+        window.selectReplacementMeal = function (mealId) {
+            const { day, slot } = swapContext;
+            appState.weeklyPlan[day][slot] = mealId;
+            saveState();
+            window.closeSwapModal();
+            window.renderPlanner();
+            window.showToast('Meal updated!');
+        };
+
+        // -------------------- G. BAZAAR & GROCERY CHECKLIST --------------------
+        window.renderGroceryList = function () {
+            const categoryMap = {
+                'Fish, Poultry & Eggs': {},
+                'Paneer, Tofu & Lentils': {},
+                'Vegetables & Greens': {},
+                'Pantry & Spices': {}
+            };
+
+            DAYS_OF_WEEK.forEach(day => {
+                const plan = appState.weeklyPlan[day];
+                const mealIds = [plan.meal1, plan.meal2];
+                if (plan.includeSnack) mealIds.push(plan.snack);
+
+                mealIds.forEach(id => {
+                    const meal = getMealById(id);
+                    (meal.ingredients || []).forEach(ing => {
+                        const cat = categoryMap[ing.category] ? ing.category : 'Pantry & Spices';
+                        categoryMap[cat][ing.name] = (categoryMap[cat][ing.name] || 0) + 1;
+                    });
+                });
+            });
+
+            // Add tea/coffee essentials based on weekly consumption
+            let hasMilkBev = false;
+            let hasBlackOrGreen = false;
+            DAYS_OF_WEEK.forEach(d => {
+                const b = appState.dailyBeverages[d] || {};
+                if ((b.milk_tea_nosugar || 0) + (b.milk_coffee_nosugar || 0) > 0) hasMilkBev = true;
+                if ((b.black_coffee || 0) + (b.green_black_tea || 0) + (b.lemon_ginger_tea || 0) > 0) hasBlackOrGreen = true;
+            });
+            if (hasMilkBev) categoryMap['Pantry & Spices']['Toned / Skim Milk & Tea Leaves / Coffee Powder'] = 7;
+            if (hasBlackOrGreen) categoryMap['Pantry & Spices']['Green Tea Bags / Black Coffee Roast & Ginger'] = 7;
+
+            const grid = document.getElementById('groceryCategoriesGrid');
+            grid.innerHTML = '';
+
+            const categoryIcons = {
+                'Fish, Poultry & Eggs': { icon: 'fish', color: 'text-orange-600 bg-orange-50' },
+                'Paneer, Tofu & Lentils': { icon: 'bean', color: 'text-emerald-600 bg-emerald-50' },
+                'Vegetables & Greens': { icon: 'carrot', color: 'text-green-600 bg-green-50' },
+                'Pantry & Spices': { icon: 'package', color: 'text-amber-600 bg-amber-50' }
+            };
+
+            Object.entries(categoryMap).forEach(([catName, itemsObj]) => {
+                const entries = Object.entries(itemsObj);
+                const meta = categoryIcons[catName];
+
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs';
+
+                let itemsHtml = '';
+                if (entries.length === 0) {
+                    itemsHtml = `<p class="text-sm text-slate-400 italic mt-2">No items needed for this category.</p>`;
+                } else {
+                    itemsHtml = `<div class="space-y-2 mt-3">` + entries.map(([itemName, count]) => {
+                        const isChecked = !!appState.checkedGroceries[itemName];
+                        const safeKey = itemName.replace(/'/g, "\\'");
+                        return `
+                            <label class="flex items-center justify-between gap-3 p-2.5 rounded-xl border cursor-pointer transition-colors ${
+                                isChecked ? 'bg-slate-50 border-slate-200 text-slate-400 line-through' : 'bg-white border-slate-200/80 hover:bg-slate-50 text-slate-800'
+                            }">
+                                <div class="flex items-center gap-3">
+                                    <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleGroceryItem('${safeKey}')" class="w-4 h-4 accent-[#16302B] rounded cursor-pointer">
+                                    <span class="text-xs sm:text-sm font-medium">${itemName}</span>
+                                </div>
+                                <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 shrink-0">${count}×</span>
+                            </label>
+                        `;
+                    }).join('') + `</div>`;
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-2.5 pb-2.5 border-b border-slate-100">
+                        <div class="p-2 rounded-xl ${meta.color}">
+                            <i data-lucide="${meta.icon}" class="w-4 h-4"></i>
+                        </div>
+                        <h3 class="font-display font-bold text-base text-slate-900">${catName}</h3>
+                    </div>
+                    ${itemsHtml}
+                `;
+                grid.appendChild(card);
+            });
+
+            lucide.createIcons();
+        };
+
+        window.toggleGroceryItem = function (name) {
+            appState.checkedGroceries[name] = !appState.checkedGroceries[name];
+            saveState();
+            window.renderGroceryList();
+        };
+
+        window.resetGroceryChecks = function () {
+            appState.checkedGroceries = {};
+            saveState();
+            window.renderGroceryList();
+            window.showToast('Bazaar checklist cleared.');
+        };
+
+        window.copyGroceryList = function () {
+            const lines = ['SwasthyaThali - Weekly Diabetic Bazaar List:'];
+            const labels = document.querySelectorAll('#groceryCategoriesGrid label span.font-medium');
+            labels.forEach(sp => lines.push(`- ${sp.textContent}`));
+
+            const textarea = document.createElement('textarea');
+            textarea.value = lines.join('\n');
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            window.showToast('Bazaar list copied to clipboard!');
+        };
+
+        // -------------------- H. PREFERENCES FORM --------------------
+        window.renderPreferencesForm = function () {
+            const { calories, eatingWindow, exclusions, cuisines, pureVegDays, defaultBeverages } = appState.preferences;
+            document.getElementById('prefCalories').value = calories;
+            document.getElementById('prefWindow').value = eatingWindow;
+            document.getElementById('prefExclusions').value = exclusions;
+
+            document.getElementById('prefCuisineContinental').checked = cuisines.includes('Continental');
+            document.getElementById('prefCuisineBengali').checked = cuisines.includes('Bengali');
+            document.getElementById('prefCuisineIndian').checked = cuisines.includes('Indian');
+            document.getElementById('prefCuisineChinese').checked = cuisines.includes('Chinese');
+
+            // Default daily tea & coffee inputs
+            const bevGrid = document.getElementById('defaultBevPrefsGrid');
+            bevGrid.innerHTML = '';
+            BEVERAGE_OPTIONS.forEach(bev => {
+                const val = defaultBeverages[bev.id] || 0;
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between text-xs sm:text-sm';
+                row.innerHTML = `
+                    <span class="font-semibold text-slate-700">${bev.name} <span class="text-slate-400 font-normal">(${bev.calories} kcal)</span></span>
+                    <input type="number" min="0" max="8" value="${val}" data-bev-pref="${bev.id}" class="w-16 px-2.5 py-1 rounded-lg border border-slate-300 text-center font-bold text-slate-900 bg-white">
+                `;
+                bevGrid.appendChild(row);
+            });
+
+            // Pure-Veg Days checkboxes
+            const vegGrid = document.getElementById('vegDaysCheckboxes');
+            vegGrid.innerHTML = '';
+            DAYS_OF_WEEK.forEach(day => {
+                const checked = pureVegDays.includes(day);
+                const label = document.createElement('label');
+                label.className = `flex flex-col items-center justify-center p-2 rounded-xl border cursor-pointer text-center transition-all ${
+                    checked ? 'bg-emerald-50 border-emerald-600 text-emerald-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600'
+                }`;
+                label.innerHTML = `
+                    <input type="checkbox" value="${day}" ${checked ? 'checked' : ''} class="veg-day-cb mb-1 accent-[#16302B] w-4 h-4">
+                    <span class="text-xs">${day.slice(0, 3)}</span>
+                `;
+                vegGrid.appendChild(label);
+            });
+        };
+
+        window.savePreferences = function (notify = true) {
+            const cals = parseInt(document.getElementById('prefCalories').value, 10) || 1900;
+            const win = document.getElementById('prefWindow').value;
+            const excl = document.getElementById('prefExclusions').value.trim();
+
+            const cuisines = [];
+            if (document.getElementById('prefCuisineContinental').checked) cuisines.push('Continental');
+            if (document.getElementById('prefCuisineBengali').checked) cuisines.push('Bengali');
+            if (document.getElementById('prefCuisineIndian').checked) cuisines.push('Indian');
+            if (document.getElementById('prefCuisineChinese').checked) cuisines.push('Chinese');
+            if (cuisines.length === 0) cuisines.push('Bengali');
+
+            const pureVegDays = [];
+            document.querySelectorAll('.veg-day-cb:checked').forEach(cb => pureVegDays.push(cb.value));
+
+            const defaultBeverages = {};
+            document.querySelectorAll('[data-bev-pref]').forEach(inp => {
+                defaultBeverages[inp.getAttribute('data-bev-pref')] = Math.max(0, parseInt(inp.value, 10) || 0);
+            });
+
+            appState.preferences = {
+                calories: Math.max(1300, Math.min(3200, cals)),
+                eatingWindow: win,
+                exclusions: excl,
+                cuisines,
+                pureVegDays,
+                defaultBeverages
+            };
+
+            saveState();
+            window.renderPlanner();
+            if (notify) {
+                window.showToast('Preferences saved & synced!');
+                window.switchTab('planner');
+            }
+        };
+
+        window.regenerateFullWeekPlan = function () {
+            window.savePreferences(false);
+            DAYS_OF_WEEK.forEach((day, idx) => {
+                appState.weeklyPlan[day] = buildDefaultDayPlan(day, idx);
+                appState.dailyBeverages[day] = { ...appState.preferences.defaultBeverages };
+            });
+            saveState();
+            window.renderPlanner();
+            window.showToast('7-day plan & tea/coffee routine updated!');
+            window.switchTab('planner');
+        };
+
+        // -------------------- I. GEMINI AI CUSTOM MEAL GENERATOR --------------------
+        window.openAiGeneratorModal = function () {
+            const isVegDay = appState.preferences.pureVegDays.includes(appState.selectedDay);
+            const vegNotice = document.getElementById('aiVegNotice');
+            if (isVegDay) vegNotice.classList.remove('hidden');
+            else vegNotice.classList.add('hidden');
+
+            document.getElementById('aiErrorBox').classList.add('hidden');
+            document.getElementById('aiModal').classList.remove('hidden');
+        };
+
+        window.closeAiGeneratorModal = function () {
+            document.getElementById('aiModal').classList.add('hidden');
+        };
+
+        window.generateCustomAiMeal = async function () {
+            const cuisine = document.getElementById('aiCuisineSelect').value;
+            const slot = document.getElementById('aiSlotSelect').value;
+            const extraNote = document.getElementById('aiPromptInput').value.trim();
+            const isVegDay = appState.preferences.pureVegDays.includes(appState.selectedDay);
+            const exclusions = appState.preferences.exclusions;
+
+            const btn = document.getElementById('aiGenerateBtn');
+            const errBox = document.getElementById('aiErrorBox');
+            errBox.classList.add('hidden');
+
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Creating practical recipe...</span>`;
+            lucide.createIcons();
+
+            const targetCalDesc = slot === 'snack'
+                ? 'a light snack around 200 to 260 kcal, 10-20g protein, 5-9g fiber, under 25g carbs'
+                : 'a satisfying main meal around 760 to 820 kcal, 45-68g protein, 13-20g fiber, 32-48g carbs';
+
+            const userQuery = `Create ONE simple, everyday home-cooked ${isVegDay ? 'PURE-VEGETARIAN (no meat, fish, or eggs)' : 'diabetic-friendly'} ${cuisine} recipe for a 52-year-old diabetic male.
+Target macros: ${targetCalDesc}.
+Strictly exclude: ${exclusions}.
+${extraNote ? `User ingredients/craving: ${extraNote}.` : ''}
+Keep prep under 25 minutes with exactly 2 concise cooking steps and 3-4 core ingredients categorized strictly into: "Fish, Poultry & Eggs", "Paneer, Tofu & Lentils", "Vegetables & Greens", or "Pantry & Spices".`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            name: { type: "STRING" },
+                            isVeg: { type: "BOOLEAN" },
+                            prepTime: { type: "STRING" },
+                            calories: { type: "INTEGER" },
+                            protein: { type: "INTEGER" },
+                            fiber: { type: "INTEGER" },
+                            carbs: { type: "INTEGER" },
+                            steps: { type: "ARRAY", items: { type: "STRING" } },
+                            ingredients: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        name: { type: "STRING" },
+                                        category: { type: "STRING" }
+                                    },
+                                    required: ["name", "category"]
+                                }
+                            }
+                        },
+                        required: ["name", "isVeg", "prepTime", "calories", "protein", "fiber", "carbs", "steps", "ingredients"]
+                    }
+                }
+            };
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            try {
+                let response;
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) break;
+                    await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+                }
+
+                if (!response || !response.ok) throw new Error('Network error');
+
+                const result = await response.json();
+                const rawText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!rawText) throw new Error('Empty response');
+
+                const generated = JSON.parse(rawText);
+                const newMeal = {
+                    id: 'custom-' + Date.now(),
+                    name: generated.name,
+                    cuisine: cuisine,
+                    isVeg: isVegDay ? true : Boolean(generated.isVeg),
+                    type: slot === 'snack' ? 'snack' : 'main',
+                    prepTime: generated.prepTime || '20 min',
+                    calories: Number(generated.calories) || (slot === 'snack' ? 225 : 790),
+                    protein: Number(generated.protein) || (slot === 'snack' ? 14 : 52),
+                    fiber: Number(generated.fiber) || (slot === 'snack' ? 6 : 15),
+                    carbs: Number(generated.carbs) || (slot === 'snack' ? 18 : 40),
+                    steps: Array.isArray(generated.steps) && generated.steps.length ? generated.steps.slice(0, 2) : ['Prep fresh ingredients.', 'Cook lightly in 1.5 tsp oil/ghee and serve warm.'],
+                    ingredients: Array.isArray(generated.ingredients) ? generated.ingredients : []
+                };
+
+                appState.customMeals.push(newMeal);
+                appState.weeklyPlan[appState.selectedDay][slot] = newMeal.id;
+                if (slot === 'snack') appState.weeklyPlan[appState.selectedDay].includeSnack = true;
+
+                saveState();
+                window.closeAiGeneratorModal();
+                window.renderPlanner();
+                window.showToast(`Added "${newMeal.name}"!`);
+            } catch (err) {
+                errBox.textContent = 'Could not generate a custom recipe right now. Please try again or pick from Swap Meal.';
+                errBox.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i data-lucide="wand-2" class="w-4 h-4"></i><span>Create & Apply Meal to Today</span>`;
+                lucide.createIcons();
+            }
+        };
+
+        // -------------------- INIT --------------------
+        window.addEventListener('DOMContentLoaded', () => {
+            setupPwaSupport();
+            loadLocalState();
+            try {
+                if (localStorage.getItem('swasthyathali_hide_install_banner') === '1') {
+                    document.getElementById('pixelInstallBanner').classList.add('hidden');
+                }
+            } catch (e) {}
+            window.renderPlanner();
+            lucide.createIcons();
+            initFirebaseSync();
+        });
+    </script>
+</body>
+</html>
